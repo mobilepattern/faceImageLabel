@@ -1,0 +1,8 @@
+*.jpg
+*.xml
+Include/
+Lib/
+Scripts/
+__pycache__/
+photoface/
+tcl/
