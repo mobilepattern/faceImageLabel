@@ -39,6 +39,14 @@ class segment:
 		return "%s: x0=%s, y0=%s, x1=%s, y1=%s" % (self.name, self.x0, self.y0, self.x1, self.y1)
 
 
+	def encodeUserName(self):
+		return self.name.replace(' ', '_')
+
+
+	def decodeUserName(self):
+		return self.name.replace('_', ' ')
+
+
 	def extractImage(self, filename):
 		original_image = cv2.imread(filename)
 		(h, w, d) = original_image.shape
@@ -51,7 +59,7 @@ class segment:
 
 	def writeSegment(self, filename):
 		new_img = self.extractImage(filename)
-		newFileName = self.name.replace(' ', '') + '.jpg'
+		newFileName = self.encodeUserName()+ '.jpg'
 		cv2.imwrite(newFileName, new_img)
 		return newFileName
 
@@ -71,7 +79,7 @@ class segment:
 		for (x,y,w,h) in faces:
 			cv2.rectangle(image, (x,y), (x+w,y+h), (255,0,0), 2)
 			count += 1
-			cv2.imwrite("User." + self.name + '.' + str(count) + ".jpg", gray[y:y+h,x:x+w])
+			cv2.imwrite("User." + self.encodeUserName() + '.' + str(count) + ".jpg", gray[y:y+h,x:x+w])
 
 
 def createSegments(filename):
