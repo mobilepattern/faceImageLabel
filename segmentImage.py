@@ -1,12 +1,18 @@
+'''
+Read the image and extract the XMP markup that describes regions containing people.
+
+Write out new images named after the person in the region.
+'''
 import xml.etree.ElementTree as ET
 
 import cv2
 import numpy
 
-def findElements(root, patt):
+def findElements(root, pattern):
+	'''Search the XML at root finding tags containing the pattern.'''
 	l = []
 	for e in root.iter():
-		if patt in e.tag:
+		if pattern in e.tag:
 			l.append(e)
 	return l
 
@@ -35,13 +41,15 @@ class segment:
 		y0 = int(self.y0*h)
 		x1 = int(self.x1*w)
 		y1 = int(self.y1*h)
-		print(self.name, x0, y0, x1, y1)
 		new_img = original_image[y0:y1, x0:x1]
 		(nw, nh, nd) = new_img.shape
-		print(self.name, nw, nh, nd)
-		cv2.imwrite(self.name.replace(' ', '') + '.jpg', new_img)
+		newFileName = self.name.replace(' ', '') + '.jpg'
+		cv2.imwrite(newFileName, new_img)
+		return newFileName
 
 def createSegments(filename):
+	'''Read XMP data from the filename and create segments for each subject.'''
+
 	segments = {}
 
 	with open(filename, encoding='latin-1') as fd:
@@ -65,7 +73,8 @@ original_image = cv2.imread(filename)
 
 segments = createSegments(filename)
 for s in segments.values():
-	s.writeSegment(original_image)
+	newFileName = s.writeSegment(original_image)
+	print("Saving ", newFileName)
 
 # Test the segmentation write code
 
