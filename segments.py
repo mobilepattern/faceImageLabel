@@ -109,4 +109,6 @@ def createSegments(filename):
 		print("Can't open", filename)
 	except ET.ParseError:
 		pass # No xmp data found
+	except KeyError:
+		pass # No Person found
 	return segments
