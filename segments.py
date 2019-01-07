@@ -5,6 +5,7 @@ Read the image and extract the XMP markup that describes regions containing peop
 
 Write out new images named after the person in the region.
 '''
+from os import path
 import xml.etree.ElementTree as ET
 
 import cv2
@@ -64,7 +65,7 @@ class segment:
 		return newFileName
 
 
-	def extractFace(self, filename):
+	def extractFace(self, filename, directory=None, count=0):
 		'''Save a greyscale version of the segment to include only the face.
 
 		Based on tutorial in https://linuxhint.com/opencv-face-recognition/
@@ -75,11 +76,13 @@ class segment:
 		gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
 		faces = face_detector.detectMultiScale(gray, 1.3, 5)
 
-		count = 0
 		for (x,y,w,h) in faces:
 			cv2.rectangle(image, (x,y), (x+w,y+h), (255,0,0), 2)
 			count += 1
-			cv2.imwrite("User." + self.encodeUserName() + '.' + str(count) + ".jpg", gray[y:y+h,x:x+w])
+			outputFile = "User." + self.encodeUserName() + '.' + str(count) + ".jpg"
+			if directory is not None:
+				outputFile = path.join(directory, outputFile)
+			cv2.imwrite(outputFile, gray[y:y+h,x:x+w])
 
 
 def createSegments(filename):
@@ -87,18 +90,23 @@ def createSegments(filename):
 
 	segments = {}
 
-	with open(filename, encoding='latin-1') as fd:
-		d= fd.read()
-		xmp_start = d.find('<x:xmpmeta')
-		xmp_end = d.find('</x:xmpmeta')
-		xmp_str = d[xmp_start:xmp_end+12]
+	try:
+		with open(filename, 'r', encoding='latin-1') as fd:
+			d= fd.read()
+			xmp_start = d.find('<x:xmpmeta')
+			xmp_end = d.find('</x:xmpmeta')
+			xmp_str = d[xmp_start:xmp_end+12]
 
-		root = ET.fromstring(xmp_str)
+			root = ET.fromstring(xmp_str)
 
-		regions = findElements(root, 'li')
+			regions = findElements(root, 'li')
 
-		for r in regions:
-			name = r.attrib['{http://ns.microsoft.com/photo/1.2/t/Region#}PersonDisplayName']
-			(x0, y0, xh, yh) = map(float, r.attrib['{http://ns.microsoft.com/photo/1.2/t/Region#}Rectangle'].split(','))
-			segments[name] = segment(name, x0, y0, x0 + xh, y0 + yh)
+			for r in regions:
+				name = r.attrib['{http://ns.microsoft.com/photo/1.2/t/Region#}PersonDisplayName']
+				(x0, y0, xh, yh) = map(float, r.attrib['{http://ns.microsoft.com/photo/1.2/t/Region#}Rectangle'].split(','))
+				segments[name] = segment(name, x0, y0, x0 + xh, y0 + yh)
+	except IOError as ioe:
+		print("Can't open", filename)
+	except ET.ParseError:
+		pass # No xmp data found
 	return segments
